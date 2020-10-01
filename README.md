@@ -1,0 +1,2 @@
+# SpectrumForSyntacore
+trial_task_math
