@@ -1,4 +1,4 @@
-The goal of program is to calculate spectrum of new set of vectors calculated as combinations of starting ones.
+The goal of the program is to calculate spectrum of new set of vectors calculated as combinations of starting ones.
 Spectrum is basicaly just amount of new vectors of each number of "1"s. So, if n is vectors length, spectrum interval is [0,n].
 This program reads data from file in form of string lines, that consist of "0"s and "1"s.Each line is binary vector. 
 Then program converts all binary vectors to decimal numbers, because it's easy to store them this way.
