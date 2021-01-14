@@ -22,6 +22,8 @@ void count_spectrum(vector<size_t>& spectrum, const valarray<valarray<unsigned l
 	unsigned long long one_thread_operatirons_tmp;
 	unsigned long long begin = 0;
 
+	mutex spectrum_multithread_protection;
+
 	// Divides operatins by threads.
 	for (size_t i = 0; i < threads_amount; i++) {
 		// If number of operations can't be divided equally, some threads get one more operation.
@@ -29,7 +31,7 @@ void count_spectrum(vector<size_t>& spectrum, const valarray<valarray<unsigned l
 			one_thread_operatirons_tmp = one_thread_operatirons + 1;
 		else
 			one_thread_operatirons_tmp = one_thread_operatirons;
-		threads.push_back(thread(&add_vector_weight_for_slice, ref(spectrum), ref(base_vectors), begin, one_thread_operatirons_tmp, k));
+		threads.push_back(thread(&add_vector_weight_for_slice, ref(spectrum), ref(base_vectors), ref(spectrum_multithread_protection), begin, one_thread_operatirons_tmp, k));
 		begin += one_thread_operatirons_tmp;
 	}
 
@@ -39,24 +41,25 @@ void count_spectrum(vector<size_t>& spectrum, const valarray<valarray<unsigned l
 }
 
 // Applys function add_vector_weight to each element starting from "begin" to number of "length" elements after it.
-static void add_vector_weight_for_slice(vector<size_t>& spectrum, const valarray<valarray<unsigned long long>>& base_vectors, unsigned long long begin, unsigned long long length, size_t k) {
+static void add_vector_weight_for_slice(vector<size_t>& spectrum, const valarray<valarray<unsigned long long>>& base_vectors, mutex& spectrum_multithread_protection, unsigned long long begin, unsigned long long length, size_t k) {
 	for (size_t i = 0; i < length; i++)
-		add_vector_weight(spectrum, base_vectors, begin + i, k);
+		add_vector_weight(spectrum, base_vectors, spectrum_multithread_protection, begin + i, k);
 }
 
 // Adds 1 to spectrum value that equals to amount of "1" in current composition of multipliers for base_vectors.
-static void add_vector_weight(vector<size_t>& spectrum, const valarray<valarray<unsigned long long>>& base_vectors, unsigned long long j, size_t k) {
+static void add_vector_weight(vector<size_t>& spectrum, const valarray<valarray<unsigned long long>>& base_vectors, mutex& spectrum_multithread_protection, unsigned long long j, size_t k) {
 	// Temporal vector to represent current sum of current composition of multipliers for base_vectors.
 	valarray<unsigned long long> tmp_vectors_sum;
 	// Counter for bits = 1 in current vector
 	size_t count = 0; 
-	mutex spectrum_multithread_protection;
+	
 	tmp_vectors_sum.resize(base_vectors[0].size());
 
 	// Caiculates tmp_vectors_sum by multiplying each of base_vectors with its current multiplier and summarize them.
 	// Using valarray helps to apply binary operations to whole vector, no need to cycle through each element.
 	for (size_t i = 0; i < k; i++)
-		tmp_vectors_sum ^= (calculate_multiplier(k, i, j) * base_vectors[i]);
+		if (calculate_multiplier(k, i, j))
+			tmp_vectors_sum ^= base_vectors[i];
 
 	// Counts "1" in bit representation of tmp_vectors_sum.
 	for (size_t u = 0; u < tmp_vectors_sum.size(); u++)

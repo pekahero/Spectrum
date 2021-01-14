@@ -9,4 +9,8 @@ So, if number of starting vectors is k. We need  2^k combinations to work with. 
 When new vector is calculated, there is no reason to store it, just to calculate number of "1"s in it. And increase value in respected index by 1.
 When spectrum is calculated, result is written to file like: "index"\t"index's value".
 
+Plans: 
+1) Represent multipliers by Grey code would help to recalculate just one position each time.
+2) Bitset representaton of vectors instead of ull.
+
 
