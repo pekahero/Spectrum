@@ -6,6 +6,7 @@ cmake_minimum_required (VERSION 3.8)
 
 # Add source to this project's executable.
 project(Linear-subspace-spectrum)
+set(CMAKE_CXX_STANDARD 11)
 add_executable (linear-subspace-spectrum "linear-subspace-spectrum.cpp" "linear-capsule.cpp" "write-read-files.cpp" "linear-capsule.h" "write-read-files.h")
 
 # TODO: Add tests and install targets if needed.
