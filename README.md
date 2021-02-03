@@ -16,12 +16,11 @@ It doesn't matter if changing digit is "0" or "1": result is the same for "+1" o
 When spectrum is calculated, result is written to file like: "index"\t"index's value".
 
 # How to run program.
-### Program takes arguments of command line.
+Program takes arguments of command line.
 Necessary arguments to run program:
  - "-i <filename>" - key -i and name of a file to read vectors from, ".txt" format.
  - "-o <filename>" - key -o and name of a file to write vectors to, ".txt" format.
- 
-### Optional arguments:
+Optional arguments:
  - "-t <filename>" - key -t and name of a file to compare result file with, ".txt" format.
 
 # Files.
