@@ -15,8 +15,16 @@ It doesn't matter if changing digit is "0" or "1": result is the same for "+1" o
 3) When new vector is calculated, there is no reason to store it, just to calculate number of "1"s in it. And increase value in respected index by 1.
 When spectrum is calculated, result is written to file like: "index"\t"index's value".
 
-# Files.
+# How to run program.
+### Program takes arguments of command line.
+Necessary arguments to run program:
+ - "-i <filename>" - key -i and name of a file to read vectors from, ".txt" format.
+ - "-o <filename>" - key -o and name of a file to write vectors to, ".txt" format.
+ 
+### Optional arguments:
+ - "-t <filename>" - key -t and name of a file to compare result file with, ".txt" format.
 
+# Files.
 - linear-subspace-spectrum.cpp - main executable file.
 - linear-capsule.cpp - file for all spectrum calculation related functions.
 - linear-capsule.h - respected finctions declarations and libraries.
