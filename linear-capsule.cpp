@@ -1,82 +1,80 @@
 #include "linear-capsule.h"
 
-using namespace std;
+namespace LinearSubspaceSpectrum {
 
-// Main spectrum counting function.
-void count_spectrum(vector<size_t>& spectrum, const vector<valarray<bitset<32>>>& base_vectors, size_t n, size_t k) {
-	// Spectrum size is equal to maximum possible amount of "1" in vector. It is n, it is possible to have zero "1", so n+1.
-	// Index of element of spectrum equals to amount of "1" in vector. Value of index shows number of vectors with such amount of "1".
-	spectrum.resize(n + 1);
-	size_t count = 0; // counter for bits = 1 in current vector;
-	vector<thread> threads;
-	// Number of rows for truth table is equal to 2^(number of columns). And number of columns is k.
-	const int32_t k_2 = pow(2, k);
-	// Hardware concurrency.
-	const size_t concurrency = thread::hardware_concurrency();
+	using namespace std;
 
-	// In block below calculates, how much threads and operations per thread are used.
-	const bool thread_flag = concurrency > k_2 ? true : false;
-	const uint8_t threads_amount = thread_flag ? k_2 : concurrency;
-	const uint32_t one_thread_operatirons = thread_flag ? 1 : k_2 / concurrency;
-	const uint32_t one_thread_operatirons_left = thread_flag ? 0 : k_2 % concurrency;
-	uint32_t one_thread_operatirons_tmp;
-	uint32_t begin = 0;
-	mutex spectrum_multithread_protection;
+	// Main spectrum counting function.
+	void count_spectrum(vector<uint64_t>& spectrum, const vector<valarray<bitset<32>>>& base_vectors, uint64_t n, uint64_t k) {
+		// Spectrum size is equal to maximum possible amount of "1" in vector. It is n, it is possible to have zero "1", so n+1.
+		// Index of element of spectrum equals to amount of "1" in vector. Value of index shows number of vectors with such amount of "1".
+		spectrum.resize(n + 1);
+		vector<thread> threads;
+		// Number of rows for truth table is equal to 2^(number of columns). And number of columns is k.
+		const uint64_t k_2 = static_cast<uint64_t>(pow(2, k));
+		// Hardware concurrency.
+		const uint64_t concurrency = thread::hardware_concurrency();
 
-	// Divides operations by threads.
-	for (size_t i = 0; i < threads_amount; i++) {
-		// If number of operations can't be divided equally, some threads get one more operation.
-		if (i < one_thread_operatirons_left)
-			one_thread_operatirons_tmp = one_thread_operatirons + 1;
-		else
-			one_thread_operatirons_tmp = one_thread_operatirons;
-		threads.push_back(thread(&add_vector_weight_for_slice, ref(spectrum), base_vectors, begin, one_thread_operatirons_tmp, k, ref(spectrum_multithread_protection)));
-		begin += one_thread_operatirons_tmp;
+		// In block below calculates, how much threads and operations per thread are used.
+		const bool thread_flag = concurrency > k_2 ? true : false;
+		const uint64_t threads_amount = thread_flag ? k_2 : concurrency;
+		const uint64_t one_thread_operatirons = thread_flag ? 1 : k_2 / concurrency;
+		const uint64_t one_thread_operatirons_left = thread_flag ? 0 : k_2 % concurrency;
+		uint64_t one_thread_operatirons_tmp;
+		uint64_t begin = 0;
+		mutex spectrum_multithread_protection;
+
+		// Divides operations by threads.
+		for (uint64_t i = 0; i < threads_amount; i++) {
+			// If number of operations can't be divided equally, some threads get one more operation.
+			if (i < one_thread_operatirons_left)
+				one_thread_operatirons_tmp = one_thread_operatirons + 1;
+			else
+				one_thread_operatirons_tmp = one_thread_operatirons;
+			threads.push_back(thread(&add_vector_weight, ref(spectrum), base_vectors, begin, one_thread_operatirons_tmp, k, ref(spectrum_multithread_protection)));
+			begin += one_thread_operatirons_tmp;
+		}
+		// Runs threads.
+		for (uint64_t i = 0; i < threads_amount; i++)
+			threads.at(i).join();
 	}
-	// Runs threads.
-	for (size_t i = 0; i < threads_amount; i++)
-		threads.at(i).join();
-}
 
+	// Add vectors' weights values to spectrum starting from "begin" vector to "begin + length" vector.
+	static void add_vector_weight(vector<uint64_t>& spectrum, const vector<valarray<bitset<32>>> base_vectors, uint64_t begin, uint64_t length, uint64_t k, mutex& spectrum_multithread_protection) {
+		uint64_t n_32 = base_vectors[0].size();
+		valarray<bitset<32>> tmp_vectors_sum;
+		tmp_vectors_sum.resize(n_32);
+		uint64_t count_ones = 0;
+		uint64_t multipliers = 0;
+		uint64_t previous_multipliers = 0;
 
+		// Go through all vectors at current thread and adding its values to spectrum.
+		for (uint64_t i = begin; i < begin + length; i++) {
+			count_ones = 0;
 
-// Applys function add_vector_weight to each element starting from "begin" to number of "length" elements after it.
-static void add_vector_weight_for_slice(vector<size_t>& spectrum, const vector<valarray<bitset<32>>> base_vectors, int32_t begin, int32_t length, size_t k, mutex& spectrum_multithread_protection) {
-	for (size_t i = 0; i < length; i++)
-		add_vector_weight(spectrum, base_vectors, begin + i, k, spectrum_multithread_protection);
-}
+			if (i == begin) {
+				multipliers = begin ^ (begin >> 1);
+				// Add first vectors' sum.
+				for (uint64_t i = 0; i < k; i++)
+					// If multiplier is 0, operation can be skipped. 
+					if ((uint64_t(1) << i) & multipliers)
+						tmp_vectors_sum ^= base_vectors[i];
+			}
+			else {
+				previous_multipliers = multipliers;
+				multipliers = i ^ (i >> 1);
+				// Add exactly one vector to vectors' sum.
+				tmp_vectors_sum ^= base_vectors[log2(previous_multipliers ^ multipliers)];
+			}
 
-// Adds 1 to spectrum value that equals to amount of "1" in current composition of multipliers for base_vectors.
-static void add_vector_weight(vector<size_t>& spectrum, const vector<valarray<bitset<32>>> base_vectors, int32_t j, size_t k, mutex& spectrum_multithread_protection) {
-	// Temporal vector to represent current sum of current composition of multipliers for base_vectors.
-	valarray<bitset<32>> tmp_vectors_sum;
-	// Counter for bits = 1 in current vector
-	size_t count_ones = 0; 
-	tmp_vectors_sum.resize(base_vectors[0].size());
-	// Calculates tmp_vectors_sum by multiplying each of base_vectors with its current multiplier and summarize them.
-	// Using valarray helps to apply binary operations to whole vector, no need to cycle through each element.
-	for (size_t i = 0; i < k; i++)
-		// If multiplier is 0, operation can be skipped. 
-		if (calculate_multiplier(k, i, j) == 1)
-			tmp_vectors_sum ^= base_vectors[i];
+			// Count "1"s in current vectors' sum.
+			for (uint64_t j = 0; j < n_32; j++)
+				count_ones += tmp_vectors_sum[j].count();
 
-	// Counts "1" in bit representation of tmp_vectors_sum.
-	for (size_t u = 0; u < tmp_vectors_sum.size(); u++)
-		count_ones += tmp_vectors_sum[u].count();
-
-	// Increases spectrum's element that equals to "count" by 1.
-	// Protected as critical section.
-	spectrum_multithread_protection.lock();
-	spectrum[count_ones]++;
-	spectrum_multithread_protection.unlock();
-}
-
-// Calculates multiplier based on (i) and (j) indexes of table similar to truth table, where (k) is maximum columns number.
-// It is decided to represent multipliers as truth table.
-// It is decided to calculate multipliers based on indexes, so no need to store huge tables of them. Calculation is easy due to truth table's symmetry, regularity.
-static bool calculate_multiplier(size_t k, size_t i, int32_t j) {
-	if ((j >> (k - 1 - i)) % 2 == 1)
-		return(1);
-	else
-		return(0);
+			// Protected section - adding spectrum value.
+			spectrum_multithread_protection.lock();
+			spectrum[count_ones]++;
+			spectrum_multithread_protection.unlock();
+		}
+	}
 }

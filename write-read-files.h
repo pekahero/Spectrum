@@ -10,7 +10,10 @@
 #include <valarray>
 #include <vector>
 
-using namespace std;
+namespace LinearSubspaceSpectrum {
 
-bool read_bites_from_file(vector<valarray<bitset<32>>> & vectors, size_t& n, size_t& k, string& filename);
-bool write_spectrum_to_file(const vector<size_t>& spectrum, string& filename);
+	using namespace std;
+
+	bool read_bites_from_file(vector<valarray<bitset<32>>>& vectors, uint64_t& n, uint64_t& k, string& filename);
+	bool write_spectrum_to_file(const vector<uint64_t>& spectrum, string& filename);
+}
