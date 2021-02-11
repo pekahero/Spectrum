@@ -9,11 +9,8 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 	const regex filename_mask_txt = regex(R"(.*\.txt)");
-	int argv_length = 0;
-	// Find argv length.
-	while (argv[++argv_length] != NULL);
 	// Check if command line arguments of input/output files are correct.
-	if (argv_length > 4) {
+	if (argc > 4) {
 		if (!(string(argv[1]) == "-i") || !(regex_match(argv[2], filename_mask_txt)) || !(string(argv[3]) == "-o") || !(regex_match(argv[4], filename_mask_txt))) {
 			cerr << "Wrong command line arguments of input/output files!" << endl;
 			return EXIT_FAILURE;
@@ -27,8 +24,8 @@ int main(int argc, char* argv[]) {
 	bool is_testing = false;
 	string comparison_filename = "";
 	// Check if command line arguments of comparison file are correct.
-	if (argv_length > 5)
-		if ((string(argv[5]) == "-t") && (argv_length > 6))
+	if (argc > 5)
+		if ((string(argv[5]) == "-t") && (argc > 6))
 			if (regex_match(argv[6], filename_mask_txt)) {
 				comparison_filename = argv[6];
 				is_testing = true;
