@@ -46,11 +46,11 @@ int main(int argc, char* argv[]) {
 	//string second_file = argv[2];
 
 	// Vectors' length and number of vectors.
-	uint64_t n = 0, k = 0;
+	size_t n = 0, k = 0;
 	// Starting, base vectors to work with.
 	vector<valarray<bitset<32>>> base_vectors;
 	// Spectrum, which will be calculated as a result.
-	vector<uint64_t> spectrum;
+	vector<size_t> spectrum;
 
 	// Checks if data is correctly read from file.
 	if (!LinearSubspaceSpectrum::read_bites_from_file(base_vectors, n, k, input_filename))
